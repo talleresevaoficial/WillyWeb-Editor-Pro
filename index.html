@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WillyWeb Editor Pro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/default.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1e1e1e;
+      color: #eee;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.light {
+      background: #f5f5f5;
+      color: #333;
+    }
+    .header {
+      background: #007acc;
+      color: white;
+      padding: 15px;
+      font-size: 1.4em;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+    .motivation {
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 6px;
+      opacity: 0.9;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    .editor-panel, .preview {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #444;
+      min-width: 0;
+      transition: all 0.3s ease;
+    }
+    body.light .editor-panel, body.light .preview { border-right: 1px solid #ddd; }
+    .editor-panel.fullscreen, .preview.fullscreen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1000;
+      width: 100% !important;
+      height: 100% !important;
+      border: none;
+      border-radius: 0;
+    }
+    .editor-header {
+      background: #252526;
+      padding: 10px 14px;
+      font-weight: bold;
+      font-size: 0.95em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #ccc;
+      flex-shrink: 0;
+    }
+    body.light .editor-header { background: #e0e0e0; color: #333; }
+    .file-name {
+      font-family: 'Consolas', monospace;
+      font-size: 0.85em;
+      color: #aaa;
+      cursor: pointer;
+    }
+    body.light .file-name { color: #666; }
+    .file-name input {
+      background: transparent;
+      border: 1px solid #007acc;
+      color: inherit;
+      font: inherit;
+      width: 120px;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .fullscreen-btn {
+      background: #f28c38;
+      color: white;
+      border: none;
+      font-size: 1em;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+    .fullscreen-btn:hover {
+      background: #e5731f;
+    }
+    .CodeMirror {
+      flex: 1;
+      height: 100%;
+      font-size: 14px;
+      min-height: 0;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+    .controls {
+      padding: 10px;
+      background: #252526;
+      text-align: center;
+      border-top: 1px solid #444;
+      flex-shrink: 0;
+    }
+    body.light .controls { background: #e0e0e0; border-top: 1px solid #ccc; }
+    button, .file-label {
+      padding: 9px 16px;
+      margin: 0 6px;
+      background: #007acc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: 0.2s;
+    }
+    button:hover, .file-label:hover { background: #005a99; }
+    .file-label {
+      display: inline-block;
+      background: #333;
+    }
+    body.light .file-label { background: #555; }
+    .file-label input { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    WillyWeb Editor Pro
+    <div class="motivation" id="motivation">Cargando inspiración...</div>
+  </div>
+
+  <div class="container" id="container">
+    <!-- HTML -->
+    <div class="editor-panel" id="html-panel">
+      <div class="editor-header">
+        <div>
+          HTML <span class="file-name" data-default="index.html" onclick="editFileName(this)">index.html</span>
+        </div>
+        <button class="fullscreen-btn" id="html-fullscreen" onclick="toggleFullscreen('html-panel')">Expand</button>
+        <span id="html-status">Saved</span>
+      </div>
+      <textarea id="html-code"><!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Proyecto</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="welcome">
+    <h1>Bienvenido a WillyWeb Editor Pro</h1>
+    <p>Edita tu código en tiempo real y descarga tu proyecto como ZIP.</p>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html></textarea>
+    </div>
+
+    <!-- CSS -->
+    <div class="editor-panel" id="css-panel">
+      <div class="editor-header">
+        <div>
+          CSS <span class="file-name" data-default="style.css" onclick="editFileName(this)">style.css</span>
+        </div>
+        <button class="fullscreen-btn" id="css-fullscreen" onclick="toggleFullscreen('css-panel')">Expand</button>
+        <span id="css-status">Saved</span>
+      </div>
+      <textarea id="css-code">/* style.css */
+.welcome {
+  max-width: 600px;
+  margin: 80px auto;
+  padding: 30px;
+  border: 2px solid #007acc;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.welcome h1 { color: #007acc; margin-bottom: 15px; font-size: 1.8em; }
+.welcome p { color: #555; line-height: 1.6; }</textarea>
+    </div>
+
+    <!-- JS -->
+    <div class="editor-panel" id="js-panel">
+      <div class="editor-header">
+        <div>
+          JS <span class="file-name" data-default="script.js" onclick="editFileName(this)">script.js</span>
+        </div>
+        <button class="fullscreen-btn" id="js-fullscreen" onclick="toggleFullscreen('js-panel')">Expand</button>
+        <span id="js-status">Saved</span>
+      </div>
+      <textarea id="js-code">// script.js
+document.addEventListener('DOMContentLoaded', () => {
+  const title = document.querySelector('.welcome h1');
+  if (title) {
+    setTimeout(() => {
+      title.textContent = '¡Listo para codificar!';
+      title.style.color = '#28a745';
+    }, 5000);
+  }
+});</textarea>
+    </div>
+
+    <!-- Vista Previa -->
+    <div class="preview" id="preview-panel">
+      <div class="editor-header">
+        <div>Vista Previa</div>
+        <button class="fullscreen-btn" id="preview-fullscreen" onclick="toggleFullscreen('preview-panel')">Expand</button>
+      </div>
+      <iframe id="preview"></iframe>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label class="file-label">
+      Cargar ZIP
+      <input type="file" id="zipInput" accept=".zip" />
+    </label>
+    <button onclick="downloadProject()">Descargar ZIP</button>
+    <button onclick="resetEditors()">Reiniciar</button>
+    <button id="themeBtn" onclick="toggleTheme()">Modo Claro</button>
+  </div>
+
+  <!-- CODEMIRROR: ORDEN CORRECTO -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // === Editores ===
+    const htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-code'), {
+      mode: 'htmlmixed',
+      lineNumbers: true,
+      autoCloseBrackets: true,
+      matchBrackets: true,
+      theme: 'monokai',
+      lineWrapping: true,
+      extraKeys: { "Ctrl-Space": "autocomplete" }
+    });
+    const cssEditor = CodeMirror.fromTextArea(document.getElementById('css-code'), {
+      mode: 'css',
+      lineNumbers: true,
+      autoCloseBrackets: true,
+      theme: 'monokai',
+      lineWrapping: true
+    });
+    const jsEditor = CodeMirror.fromTextArea(document.getElementById('js-code'), {
+      mode: 'javascript',
+      lineNumbers: true,
+      autoCloseBrackets: true,
+      matchBrackets: true,
+      theme: 'monokai',
+      lineWrapping: true
+    });
+
+    const preview = document.getElementById('preview');
+    const themeBtn = document.getElementById('themeBtn');
+    let fullscreenPanel = null;
+
+    const fileNames = { html: 'index.html', css: 'style.css', js: 'script.js' };
+
+    function editFileName(span) {
+      const input = document.createElement('input');
+      input.value = span.textContent;
+      input.onblur = () => {
+        const newName = input.value.trim() || span.dataset.default;
+        span.textContent = newName;
+        const type = span.parentElement.parentElement.parentElement.id.split('-')[0];
+        fileNames[type] = newName;
+      };
+      input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
+      span.textContent = '';
+      span.appendChild(input);
+      input.focus();
+      input.select();
+    }
+
+    function toggleFullscreen(panelId) {
+      const panel = document.getElementById(panelId);
+      const btn = document.getElementById(panelId.replace('-panel', '-fullscreen'));
+      const container = document.getElementById('container');
+
+      if (fullscreenPanel === panelId) {
+        panel.classList.remove('fullscreen');
+        container.style.display = 'flex';
+        document.querySelectorAll('.editor-panel, .preview').forEach(p => p.style.display = 'flex');
+        btn.textContent = 'Expand';
+        fullscreenPanel = null;
+      } else {
+        if (fullscreenPanel) {
+          const prevBtn = document.getElementById(fullscreenPanel.replace('-panel', '-fullscreen'));
+          document.getElementById(fullscreenPanel).classList.remove('fullscreen');
+          prevBtn.textContent = 'Expand';
+        }
+        fullscreenPanel = panelId;
+        container.style.display = 'block';
+        document.querySelectorAll('.editor-panel, .preview').forEach(p => {
+          if (p.id !== panelId) p.style.display = 'none';
+        });
+        panel.classList.add('fullscreen');
+        btn.textContent = 'Collapse';
+        setTimeout(() => {
+          if (panelId.includes('html')) htmlEditor.refresh();
+          if (panelId.includes('css')) cssEditor.refresh();
+          if (panelId.includes('js')) jsEditor.refresh();
+        }, 300);
+      }
+    }
+
+    function updatePreview() {
+      let html = htmlEditor.getValue();
+      const css = `<style>${cssEditor.getValue()}</style>`;
+      const js = `<script>${jsEditor.getValue()}<\/script>`;
+      html = html.replace(/href="[^"]*"/, `href="${fileNames.css}"`);
+      html = html.replace(/src="[^"]*"/, `src="${fileNames.js}"`);
+      const doc = html.replace('</head>', css + '</head>') + js;
+      preview.srcdoc = doc;
+
+      ['html', 'css', 'js'].forEach(id => {
+        const el = document.getElementById(id + '-status');
+        el.textContent = 'Saved';
+        setTimeout(() => el.textContent = 'Saved', 600);
+      });
+    }
+
+    function saveAll() {
+      localStorage.setItem('willy_files', JSON.stringify(fileNames));
+      localStorage.setItem('willy_html', htmlEditor.getValue());
+      localStorage.setItem('willy_css', cssEditor.getValue());
+      localStorage.setItem('willy_js', jsEditor.getValue());
+    }
+
+    function loadAll() {
+      if (localStorage.getItem('willy_html')) {
+        htmlEditor.setValue(localStorage.getItem('willy_html'));
+        cssEditor.setValue(localStorage.getItem('willy_css'));
+        jsEditor.setValue(localStorage.getItem('willy_js'));
+        const saved = JSON.parse(localStorage.getItem('willy_files') || '{}');
+        Object.keys(fileNames).forEach(key => {
+          if (saved[key]) {
+            fileNames[key] = saved[key];
+            const span = document.querySelector(`[data-default="${key === 'html' ? 'index.html' : key === 'css' ? 'style.css' : 'script.js'}"]`);
+            if (span) span.textContent = saved[key];
+          }
+        });
+      }
+    }
+
+    [htmlEditor, cssEditor, jsEditor].forEach(ed => ed.on('change', () => { updatePreview(); saveAll(); }));
+
+    document.getElementById('zipInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const zip = await JSZip.loadAsync(file);
+        let loaded = 0;
+        for (const [name, zipFile] of Object.entries(zip.files)) {
+          if (!zipFile.dir) {
+            const content = await zipFile.async('text');
+            if (name.endsWith('.html')) { htmlEditor.setValue(content); fileNames.html = name; loaded++; }
+            else if (name.endsWith('.css')) { cssEditor.setValue(content); fileNames.css = name; loaded++; }
+            else if (name.endsWith('.js')) { jsEditor.setValue(content); fileNames.js = name; loaded++; }
+          }
+        }
+        if (loaded > 0) {
+          document.querySelectorAll('.file-name').forEach(span => {
+            const type = span.parentElement.parentElement.parentElement.id.split('-')[0];
+            span.textContent = fileNames[type];
+          });
+          updatePreview();
+          saveAll();
+          alert(`¡${loaded} archivo(s) cargado(s)!`);
+        }
+      } catch (err) { alert('Error: ' + err.message); }
+    });
+
+    function downloadProject() {
+      const zip = new JSZip();
+      zip.file(fileNames.html, htmlEditor.getValue());
+      zip.file(fileNames.css, cssEditor.getValue());
+      zip.file(fileNames.js, jsEditor.getValue());
+      zip.generateAsync({type: "blob"}).then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "proyecto-web.zip";
+        a.click();
+      });
+    }
+
+    function resetEditors() {
+      if (confirm('¿Reiniciar todo?')) {
+        htmlEditor.setValue(document.getElementById('html-code').value);
+        cssEditor.setValue(document.getElementById('css-code').value);
+        jsEditor.setValue(document.getElementById('js-code').value);
+        fileNames.html = 'index.html'; fileNames.css = 'style.css'; fileNames.js = 'script.js';
+        document.querySelectorAll('.file-name').forEach(span => span.textContent = span.dataset.default);
+        document.querySelectorAll('.fullscreen-btn').forEach(btn => btn.textContent = 'Expand');
+        localStorage.clear();
+        updatePreview();
+      }
+    }
+
+    let isDark = true;
+    function toggleTheme() {
+      isDark = !isDark;
+      document.body.classList.toggle('light', !isDark);
+      const theme = isDark ? 'monokai' : 'default';
+      [htmlEditor, cssEditor, jsEditor].forEach(ed => ed.setOption('theme', theme));
+      themeBtn.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+    }
+
+    const frases = ["¡Cada línea cuenta!", "El código es poesía.", "¡Tú puedes!", "Paso a paso.", "¡Crea!"];
+    const motivationEl = document.getElementById('motivation');
+    function cambiarFrase() { motivationEl.textContent = frases[Math.floor(Math.random() * frases.length)]; }
+    setInterval(cambiarFrase, 8000);
+    cambiarFrase();
+
+    loadAll();
+    updatePreview();
+  </script>
+</body>
+</html>
